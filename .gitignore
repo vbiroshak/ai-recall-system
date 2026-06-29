@@ -1,0 +1,8 @@
+recall/.venv/
+recall/.fastembed_cache/
+recall/__pycache__/
+recall/config.json
+recall/recall.db
+recall/embeddings.npy
+recall/summaries/
+.DS_Store

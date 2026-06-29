@@ -1,0 +1,8 @@
+sessions/
+.venv/
+.fastembed_cache/
+__pycache__/
+config.json
+recall.db
+embeddings.npy
+summaries/
