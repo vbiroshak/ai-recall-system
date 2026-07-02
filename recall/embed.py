@@ -27,3 +27,5 @@ def embed(texts):
     norms = np.linalg.norm(vectors, axis=1, keepdims=True)
     norms[norms == 0] = 1
     return vectors / norms
+
+# Version 2.1

@@ -3,6 +3,7 @@ sessions/
 .fastembed_cache/
 __pycache__/
 config.json
-recall.db
+recall.db*
 embeddings.npy
 summaries/
+# Version 2.1

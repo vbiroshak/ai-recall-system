@@ -84,23 +84,21 @@ def main():
         empty_output()
         return
 
+    # Whitespace boundaries on both sides: a quoted or word-adjacent "+recall" never matches.
     TRIGGER_PATTERN = r'(?<!\S)\+recall(\??)(?!\S)'
-    QUOTE_CHARS = set('`"\'\u00ab\u00bb\u2039\u203a\u2018\u2019\u201a\u201b\u201c\u201d\u201e\u201f')
 
     match = re.search(TRIGGER_PATTERN, prompt, re.IGNORECASE)
     if not match:
-        empty_output()
-        return
-    start, end = match.span()
-    if (start > 0 and prompt[start-1] in QUOTE_CHARS) or (end < len(prompt) and prompt[end] in QUOTE_CHARS):
         empty_output()
         return
 
     show_recall = bool(match.group(1))
     prompt = re.sub(TRIGGER_PATTERN, "", prompt, flags=re.IGNORECASE).strip()
 
-    # Skip near-empty prompts
-    stripped = re.sub(r"<[^>]+>.*?</[^>]+>", "", prompt, flags=re.DOTALL).strip()
+    # Strip injected tag blocks (opening and closing tag names must match,
+    # so inequalities and angle-bracketed paths in real prompt text survive).
+    # Then skip near-empty prompts.
+    stripped = re.sub(r"<([A-Za-z][\w-]*)[^>]*>.*?</\1\s*>", "", prompt, flags=re.DOTALL).strip()
     if not stripped:
         empty_output()
         return
@@ -124,7 +122,13 @@ def main():
 
     conn = sqlite3.connect(DB_PATH)
     conn.execute("PRAGMA journal_mode=WAL")
-    all_unit_ids = [r[0] for r in conn.execute("SELECT id FROM units ORDER BY id")]
+    # Same row set and order as rebuild_npy: embedded units only, by id.
+    all_unit_ids = [r[0] for r in conn.execute("SELECT id FROM units WHERE embedding IS NOT NULL ORDER BY id")]
+    if len(all_unit_ids) != matrix.shape[0]:
+        # DB and embeddings.npy are mid-update and out of sync — fail open.
+        conn.close()
+        empty_output()
+        return
 
     above_floor = np.where(scores >= COSINE_FLOOR)[0]
     if len(above_floor) == 0:
@@ -202,9 +206,7 @@ def main():
 
     conn.close()
 
-    # Strongest match LAST (nearest the user prompt in context)
-    ranked.reverse()
-
+    # Fill the character budget strongest-first, so weaker matches are the ones dropped.
     blocks = []
     total_chars = 0
     for uid, score in ranked:
@@ -217,6 +219,9 @@ def main():
             break
         blocks.append(block)
         total_chars += len(block)
+
+    # Strongest match LAST (nearest the user prompt in context)
+    blocks.reverse()
 
     if not blocks:
         empty_output()
@@ -237,3 +242,5 @@ if __name__ == "__main__":
     except Exception:
         empty_output()
         sys.exit(0)
+
+# Version 2.1

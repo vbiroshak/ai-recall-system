@@ -21,7 +21,15 @@ fi
 # ── 1. Config ──
 if [ -f config.json ]; then
     echo "config.json already exists — skipping configuration."
-    TRANSCRIPTS_DIR=$(python3 -c "import json; print(json.load(open('config.json')).get('transcripts_dir','recall/sessions'))" 2>/dev/null || echo "recall/sessions")
+    # Resolve through the archiver so setup and the hook always agree on the directory.
+    TRANSCRIPTS_DIR=$(python3 - "$PROJECT_DIR" 2>/dev/null <<'PYEOF'
+import sys, os, importlib.util
+spec = importlib.util.spec_from_file_location("archive_transcripts", "archive-transcripts.py")
+archiver = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(archiver)
+print(archiver.resolve_transcripts_dir(archiver.load_config("config.json"), sys.argv[1]))
+PYEOF
+    ) || TRANSCRIPTS_DIR="recall/sessions"
 else
     if [ "$ADD_ON" = true ]; then
         # Add-on install: use the existing transcript directory.
@@ -180,6 +188,9 @@ newest = max(all_jsonl, key=os.path.getmtime) if all_jsonl else None
 
 for src in all_jsonl:
     if src == newest:
+        # The most recent transcript may be the active session — skip it.
+        # It is archived automatically at the next session start.
+        print(f"  skipped (most recent, may be an active session): {os.path.basename(src)}")
         continue
     base = os.path.basename(src)
     stem = archiver.resolve_filename(src, project_name, project_name_tier)
@@ -190,8 +201,14 @@ for src in all_jsonl:
         dst_name = base
         md_name = base[:-6] + ".md"
     dst = os.path.join(dest, dst_name)
-    if os.path.exists(dst) and os.path.getsize(dst) >= os.path.getsize(src):
-        continue
+    if os.path.exists(dst):
+        src_sid = archiver.transcript_session_id(src)
+        dst_sid = archiver.transcript_session_id(dst)
+        if src_sid and dst_sid and src_sid != dst_sid:
+            print(f"  NAMING CONFLICT (not copied — a different session already has this name): {dst_name}")
+            continue
+        if os.path.getsize(dst) >= os.path.getsize(src):
+            continue
     shutil.copy2(src, dst)
     md_path = os.path.join(dest, md_name)
     try:
@@ -270,3 +287,5 @@ echo "   recall/.venv/bin/python recall/indexer.py"
 echo ""
 echo "Start a new session so the hooks take effect. Use +recall in any prompt"
 echo "to trigger recall."
+
+# Version 2.1

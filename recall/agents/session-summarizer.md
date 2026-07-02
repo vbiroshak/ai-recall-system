@@ -30,7 +30,7 @@ Date: <YYYY-MM-DD — the date this thread's conclusion was reached, from the tu
 State: <what landed by the END of the session — the conclusion, decision, finding, or what was built. 1-2 sentences.>
 Why: <the load-bearing reasoning: why it landed there, and what was considered or rejected, including mid-session corrections. 1-2 sentences. Omit this line entirely if the transcript gives no reasoning.>
 Open: <what remains unresolved about this thread, if anything. Omit this line entirely if nothing is open.>
-Ref: Session <N>
+Ref: Session <N — or the transcript filename if the session has no number>
 
 Date and Ref are ALWAYS required on every unit — never omit them. Why and Open are optional (omit if nothing to say).
 
@@ -49,3 +49,6 @@ RULES FOR PHASE 2:
 Label this section "PHASE 2 — UNITS".
 
 OUTPUT: Write the complete output (both phases) to the path specified in your task prompt. Your entire final reply is a single short confirmation line naming the file written. Do NOT summarize, restate, or narrate the content; the file is the deliverable.
+
+---
+*Part of [AI Recall System](https://github.com/vbiroshak/ai-recall-system) — Version 2.1*

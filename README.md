@@ -29,7 +29,7 @@ When Claude runs the setup script it will:
 - Copy the transcript archiver and renderer to `.claude/hooks/`
 - Wire the hooks into your `.claude/settings.json`
 - Copy the session-summarizer agent to `.claude/agents/`
-- Scan for existing Claude Code sessions from this project and import them
+- Scan for existing Claude Code sessions from this project and import them (the most recent transcript is skipped — it may be the session running the install; it's archived at the next session start)
 - Create human-readable `.md` versions of each transcript while preserving the original `.jsonl`, giving you a backup of your transcripts
 - Note: if you already use the [AI Project Architect](https://github.com/vbiroshak/ai-project-architect) system, it will re-render all existing `.md` transcript files from the `.jsonl` files to add timestamps, which are used here for dating each indexed unit and for temporal decay in retrieval
 
@@ -72,7 +72,7 @@ The system has three stages:
 
 3. **Retrieve** — When you include `+recall` in a prompt, the hook embeds your query, searches the index using hybrid semantic + keyword matching, applies temporal decay (recent findings rank higher), and injects the top matches into your conversation context.
 
-**Note on naming:** The archiver names transcripts using three tiers. If you `/rename` a session with a name and number (e.g. "MyProject 5"), the file is formatted as `MyProject_0005.jsonl` (zero-padded for consistent sort order). If your opening message declares "This is ProjectName N" (the [AI Project Architect](https://github.com/vbiroshak/ai-project-architect) naming convention), that is used as a fallback. Sessions with neither keep their UUID filenames. The Claude Code Desktop app shows session names in its UI that are not written to the actual transcript — only `/rename` does that.
+**Note on naming:** The archiver names transcripts using four tiers. If you `/rename` a session with a name and number (e.g. "MyProject 5"), the file is formatted as `MyProject_0005.jsonl` (zero-padded for consistent sort order). If your opening message declares "This is ProjectName N" (the [AI Project Architect](https://github.com/vbiroshak/ai-project-architect) naming convention), that is used as a fallback. A free-form `/rename` title (no number) becomes the filename as-is. Sessions with none of these keep their UUID filenames. The Claude Code Desktop app shows session names in its UI that are not written to the actual transcript — only `/rename` does that.
 
 Embedding, indexing, and retrieval all run locally — no external services, no data leaves your machine. Summarization uses a Claude agent (the same way any Claude Code agent interaction works), so transcript content is sent to Anthropic's API during that step.
 
@@ -99,4 +99,4 @@ This is a project I maintain for my own work. Hopefully you find it useful and c
 [MIT](LICENSE)
 
 ---
-*Part of [AI Recall System](https://github.com/vbiroshak/ai-recall-system) — Version 2.0*
+*Part of [AI Recall System](https://github.com/vbiroshak/ai-recall-system) — Version 2.1*

@@ -1,4 +1,5 @@
 {
+  "_version": "2.1",
   "transcripts_dir": "recall/sessions",
   "project_name": "MyProject"
 }

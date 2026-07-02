@@ -167,7 +167,7 @@ def check_model_consistency(conn):
         conn.commit()
         return
     if row[0] != MODEL_NAME:
-        print(f"Model mismatch: db has {row[0]}, we use {MODEL_NAME}. Full re-index.")
+        print(f"Model mismatch: db has {row[0]}, current model is {MODEL_NAME}. Full re-index.")
         conn.execute("DELETE FROM units")
         conn.execute("DELETE FROM files")
         conn.execute("INSERT INTO units_fts(units_fts) VALUES('rebuild')")
@@ -191,7 +191,11 @@ def rebuild_npy(conn, npy_path):
     if len(raw) % expected_per_unit != 0:
         raise ValueError(f"Embedding data is corrupted: {len(raw)} bytes is not divisible by {expected_per_unit} (dim={EMBEDDING_DIM}). Re-index to fix.")
     matrix = np.frombuffer(raw, dtype=np.float32).reshape(-1, EMBEDDING_DIM)
-    np.save(str(npy_path), matrix)
+    # Write to a temp file and rename so a concurrent reader never sees a partial file.
+    tmp_path = str(npy_path) + ".tmp"
+    with open(tmp_path, "wb") as f:
+        np.save(f, matrix)
+    os.replace(tmp_path, str(npy_path))
     print(f"Saved embeddings.npy: {matrix.shape}")
 
 
@@ -203,10 +207,21 @@ def main():
 
     conn = init_db(DB_PATH)
 
+    # Model check runs before change detection: a model change wipes the index,
+    # which empties `existing` below so every summary re-embeds with the new model.
+    check_model_consistency(conn)
+
+    # Prune entries whose summary file no longer exists (deleted, or the project moved).
+    pruned = 0
+    for file_id, file_path in conn.execute("SELECT id, file_path FROM files").fetchall():
+        if not os.path.exists(file_path):
+            conn.execute("DELETE FROM units WHERE file_id=?", (file_id,))
+            conn.execute("DELETE FROM files WHERE id=?", (file_id,))
+            pruned += 1
+    if pruned:
+        print(f"Pruned {pruned} summary file(s) no longer on disk.")
+
     summary_files = sorted(SUMMARIES_DIR.glob("*.txt"))
-    if not summary_files:
-        print("No summary files found.")
-        return
 
     existing = {}
     for row in conn.execute("SELECT file_path, content_hash FROM files"):
@@ -221,13 +236,20 @@ def main():
         to_index.append((sp, current_hash))
 
     if not to_index:
+        if pruned:
+            rebuild_npy(conn, NPY_PATH)
+            conn.commit()
+            conn.close()
+            return
         if incremental:
+            return
+        if not summary_files:
+            print("No summary files found.")
             return
         print("All summaries already indexed. Nothing to do.")
         return
 
     print(f"Indexing {len(to_index)} summary file(s)...")
-    check_model_consistency(conn)
 
     from embed import embed
     import numpy as np
@@ -283,3 +305,5 @@ if __name__ == "__main__":
         if "--incremental" in sys.argv:
             sys.exit(0)
         raise
+
+# Version 2.1
