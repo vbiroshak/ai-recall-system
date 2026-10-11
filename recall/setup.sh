@@ -204,8 +204,8 @@ for src in all_jsonl:
     if os.path.exists(dst):
         src_sid = archiver.transcript_session_id(src)
         dst_sid = archiver.transcript_session_id(dst)
-        if src_sid and dst_sid and src_sid != dst_sid:
-            print(f"  NAMING CONFLICT (not copied — a different session already has this name): {dst_name}")
+        if dst_sid is None or (src_sid and src_sid != dst_sid):
+            print(f"  NAMING CONFLICT (not copied — a different session, or another platform's archive, already has this name): {dst_name}")
             continue
         if os.path.getsize(dst) >= os.path.getsize(src):
             continue
@@ -229,13 +229,20 @@ echo ""
 # Renders from the canonical .jsonl — safe to re-run; overwrites stale dateless renders.
 echo "Ensuring all transcripts have timestamps..."
 .venv/bin/python3 - "$PROJECT_DIR/$TRANSCRIPTS_DIR" "$SCRIPT_DIR" <<'PYEOF'
-import sys, os, glob
+import sys, os, glob, importlib.util
 dest, script_dir = sys.argv[1], sys.argv[2]
 sys.path.insert(0, script_dir)
 import transcript_to_md
 
+spec = importlib.util.spec_from_file_location("archive_transcripts", os.path.join(script_dir, "archive-transcripts.py"))
+archiver = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(archiver)
+
 count = 0
+# Another platform's transcripts (no Claude Code session id) are left for its own renderer.
 for jp in sorted(glob.glob(os.path.join(dest, "*.jsonl"))):
+    if archiver.transcript_session_id(jp) is None:
+        continue
     mp = jp[:-6] + ".md"
     try:
         transcript_to_md.render(jp, mp)
@@ -288,4 +295,4 @@ echo ""
 echo "Start a new session so the hooks take effect. Use +recall in any prompt"
 echo "to trigger recall."
 
-# Version 2.1
+# Version 2.2

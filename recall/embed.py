@@ -28,4 +28,4 @@ def embed(texts):
     norms[norms == 0] = 1
     return vectors / norms
 
-# Version 2.1
+# Version 2.2

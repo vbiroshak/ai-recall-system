@@ -8,7 +8,7 @@ tools: Read, Write
 
 You decompose one conversation transcript into typed topic-units for a recall index. Two explicit phases, output both.
 
-The task names the transcript file and the output path. Read the transcript in full. Do not read any other files — the transcript is your only input. Format: "## User — YYYY-MM-DD HH:MM TZ" = user turns (with timestamp), "## Claude — YYYY-MM-DD HH:MM TZ" = AI turns (with timestamp), "→ ..." = collapsed tool calls (ignore), "> _[reasoning]_" = extended thinking.
+The task names the transcript file and the output path. Read the transcript in full. Do not read any other files — the transcript is your only input. Format: "## User — YYYY-MM-DD HH:MM TZ" = user turns (with timestamp), "## Claude — YYYY-MM-DD HH:MM TZ" = AI turns (with timestamp), "## From <session name> — YYYY-MM-DD HH:MM TZ" = a message another Claude session sent into this one while working with the user (read it as a user turn), "→ ..." = collapsed tool calls (ignore), "> _[reasoning]_" = extended thinking.
 
 PURPOSE: Units are embedded and retrieved in future sessions when a topic comes up. Each unit must let that future reader recognize the topic has history and grasp its state without reading the transcript.
 
@@ -51,4 +51,4 @@ Label this section "PHASE 2 — UNITS".
 OUTPUT: Write the complete output (both phases) to the path specified in your task prompt. Your entire final reply is a single short confirmation line naming the file written. Do NOT summarize, restate, or narrate the content; the file is the deliverable.
 
 ---
-*Part of [AI Recall System](https://github.com/vbiroshak/ai-recall-system) — Version 2.1*
+*Part of [AI Recall System](https://github.com/vbiroshak/ai-recall-system) — Version 2.2*

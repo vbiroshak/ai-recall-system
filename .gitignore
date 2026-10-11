@@ -6,4 +6,4 @@ recall/recall.db*
 recall/embeddings.npy
 recall/summaries/
 .DS_Store
-# Version 2.1
+# Version 2.2

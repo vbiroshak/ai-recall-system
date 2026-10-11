@@ -66,13 +66,13 @@ What was the approach we settled on for the auth system? +recall?
 
 The system has three stages:
 
-1. **Archive** — A SessionStart hook copies and renders each completed session transcript to your transcript directory as a readable `.md` file. If you name your sessions (via `/rename` in Claude Code), the archived files use that name. Sessions without a name keep their UUID filenames — the system works either way.
+1. **Archive** — A SessionStart hook copies and renders each completed session transcript to your transcript directory as a readable `.md` file. If you name your sessions (via `/rename` in Claude Code), the archived files use that name. Sessions without a name keep their UUID filenames — the system works either way. Transcripts that another platform's archiver placed in the same folder are left alone.
 
 2. **Summarize and index** — A session-summarizer agent decomposes each transcript into typed topic-units (findings, decisions, open threads, state changes). The indexer embeds these units locally using [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) and stores them in a SQLite database.
 
 3. **Retrieve** — When you include `+recall` in a prompt, the hook embeds your query, searches the index using hybrid semantic + keyword matching, applies temporal decay (recent findings rank higher), and injects the top matches into your conversation context.
 
-**Note on naming:** The archiver names transcripts using four tiers. If you `/rename` a session with a name and number (e.g. "MyProject 5"), the file is formatted as `MyProject_0005.jsonl` (zero-padded for consistent sort order). If your opening message declares "This is ProjectName N" (the [AI Project Architect](https://github.com/vbiroshak/ai-project-architect) naming convention), that is used as a fallback. A free-form `/rename` title (no number) becomes the filename as-is. Sessions with none of these keep their UUID filenames. The Claude Code Desktop app shows session names in its UI that are not written to the actual transcript — only `/rename` does that.
+**Note on naming:** The archiver names transcripts using four tiers. If you `/rename` a session with a name and number (e.g. "MyProject 5"), the file is formatted as `MyProject_0005.jsonl` (zero-padded for consistent sort order). If your opening message declares "This is ProjectName N" (the [AI Project Architect](https://github.com/vbiroshak/ai-project-architect) naming convention), that is used as a fallback. A free-form `/rename` title (no number) becomes the filename as-is. The name may contain spaces and accented letters. Sessions with none of these keep their UUID filenames. The Claude Code Desktop app shows session names in its UI that are not written to the actual transcript — only `/rename` does that.
 
 Embedding, indexing, and retrieval all run locally — no external services, no data leaves your machine. Summarization uses a Claude agent (the same way any Claude Code agent interaction works), so transcript content is sent to Anthropic's API during that step.
 
@@ -99,4 +99,4 @@ This is a project I maintain for my own work. Hopefully you find it useful and c
 [MIT](LICENSE)
 
 ---
-*Part of [AI Recall System](https://github.com/vbiroshak/ai-recall-system) — Version 2.1*
+*Part of [AI Recall System](https://github.com/vbiroshak/ai-recall-system) — Version 2.2*
